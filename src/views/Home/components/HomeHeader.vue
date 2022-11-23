@@ -5,7 +5,7 @@
       <i class="iconfont icon-icon-test"></i>
       <i class="iconfont icon-typescript"></i>
     </span>
-    <span class="home-header-title">闽科在线考勤系统</span>
+    <span class="home-header-title">jack在线考勤系统</span>
     <el-dropdown>
       <el-badge>
         <el-icon :size="20"><Bell /></el-icon>
@@ -35,8 +35,8 @@ import { computed } from "vue";
 import { useStore } from "@/store";
 import { ElMessage } from "element-plus";
 const store = useStore();
-const head = computed(() => store.state.users.infos.head);
-const name = computed(() => store.state.users.infos.name);
+const head = computed(() => store.state.users.infos.head); //头像
+const name = computed(() => store.state.users.infos.name); //用户名
 const handleLogout = () => {
   store.commit("users/clearToken");
   setTimeout(() => {

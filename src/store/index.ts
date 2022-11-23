@@ -1,13 +1,19 @@
 import { createStore, useStore as baseUseStore } from "vuex";
 import type { Store } from "vuex";
 import type { UsersState } from "./modules/users";
-import users from "./modules/users"; //users模块
+import type { SignsState } from "./modules/signs";
 import type { InjectionKey } from "vue";
 import VuexPersistence from "vuex-persist";
+
+import users from "./modules/users"; //users模块
+import signs from "./modules/signs"; //打卡模块
+import checks from "./modules/checks";
+import news from "./modules/news";
 
 export interface State {}
 export interface StateAll extends State {
   users: UsersState;
+  signs: SignsState;
 }
 
 const vuexLocal = new VuexPersistence<State>({
@@ -29,6 +35,9 @@ export default createStore({
   actions: {},
   modules: {
     users,
+    signs,
+    checks,
+    news,
   },
   plugins: [vuexLocal.plugin],
 });

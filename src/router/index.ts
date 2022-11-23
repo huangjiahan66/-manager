@@ -6,7 +6,7 @@ import _ from "lodash";
 
 const Login = () => import("@/views/Login/Login.vue");
 const Home = () => import("@/views/Home/Home.vue");
-const Sign = () => import("@/views/Sign/Sign.vue");
+const Sign = () => import("@/views/Sign/Sign.vue"); //打开签到页面
 const Exception = () => import("@/views/Exception/Exception.vue");
 const Apply = () => import("@/views/Apply/Apply.vue");
 const Check = () => import("@/views/Check/Check.vue");
@@ -42,6 +42,25 @@ const routes: Array<RouteRecordRaw> = [
           title: "在线打卡签到",
           icon: "calendar",
           auth: true,
+        },
+        // 进入页面之前
+        beforeEnter(to, from, next) {
+          const usersInfos = (store.state as StateAll).users.infos;
+          const signsInfos = (store.state as StateAll).signs.infos;
+          console.log("signsInfos", signsInfos);
+          // 如果有signsInfos打卡信息  就不用重复发请求  isEmpty判断对象是否为空
+          if (_.isEmpty(signsInfos)) {
+            store
+              .dispatch("signs/getTime", { userid: usersInfos._id })
+              .then((res) => {
+                if (res.data.errcode === 0) {
+                  store.commit("signs/updateInfos", res.data.infos);
+                  next();
+                }
+              });
+          } else {
+            next();
+          }
         },
       },
       {
