@@ -73,6 +73,25 @@ const routes: Array<RouteRecordRaw> = [
           icon: "warning",
           auth: true,
         },
+        // 进入页面之前
+        beforeEnter(to, from, next) {
+          const usersInfos = (store.state as StateAll).users.infos;
+          const signsInfos = (store.state as StateAll).signs.infos;
+          console.log("signsInfos", signsInfos);
+          // 如果有signsInfos打卡信息  就不用重复发请求  isEmpty判断对象是否为空
+          if (_.isEmpty(signsInfos)) {
+            store
+              .dispatch("signs/getTime", { userid: usersInfos._id })
+              .then((res) => {
+                if (res.data.errcode === 0) {
+                  store.commit("signs/updateInfos", res.data.infos);
+                  next();
+                }
+              });
+          } else {
+            next();
+          }
+        },
       },
       {
         path: "apply",
@@ -83,6 +102,22 @@ const routes: Array<RouteRecordRaw> = [
           title: "添加考勤审批",
           icon: "document-add",
           auth: true,
+        },
+        beforeEnter(to, from, next) {
+          const usersInfos = (store.state as StateAll).users.infos;
+          const checksApplyList = (store.state as StateAll).checks.applyList;
+          if (_.isEmpty(checksApplyList)) {
+            store
+              .dispatch("checks/getApply", { applicantid: usersInfos._id })
+              .then((res) => {
+                if (res.data.errcode === 0) {
+                  store.commit("checks/updateApplyList", res.data.rets);
+                  next();
+                }
+              });
+          } else {
+            next();
+          }
         },
       },
       {

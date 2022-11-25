@@ -44,10 +44,11 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, computed } from "vue";
+import { ref, reactive, computed, watchEffect } from "vue";
 import { useRouter } from "vue-router";
 import { useStore } from "@/store";
 import { ElMessage } from "element-plus";
+import { toZero } from "@/utils/common";
 const router = useRouter();
 const store = useStore();
 const date = ref(new Date());
@@ -56,6 +57,7 @@ const month = ref(date.value.getMonth() + 1); //月
 
 // 用户打卡信息
 const signsInfos = computed(() => store.state.signs.infos);
+// 用户信息
 const userInfos = computed(() => store.state.users.infos);
 enum DetailKey {
   normal = "正常出勤",
@@ -66,12 +68,12 @@ enum DetailKey {
   lateAndEarly = "迟到并早退",
 }
 const detailValue = reactive({
-  normal: 0,
-  absent: 0,
-  miss: 0,
-  late: 0,
-  early: 0,
-  lateAndEarly: 0,
+  normal: 0, //正常
+  absent: 0, //矿工
+  miss: 0, //漏打卡
+  late: 0, //迟到
+  early: 0, // 早退
+  lateAndEarly: 0, //迟到并早退
 });
 
 const detailState = reactive({
@@ -79,11 +81,62 @@ const detailState = reactive({
   text: "正常" as "正常" | "异常",
 });
 
+watchEffect((reset) => {
+  const detailMonth = (signsInfos.value.detail as { [index: string]: unknown })[
+    toZero(month.value)
+  ] as { [index: string]: unknown };
+
+  for (const attr in detailMonth) {
+    switch (detailMonth[attr]) {
+      case DetailKey.normal:
+        detailValue.normal++;
+        break;
+      case DetailKey.absent:
+        detailValue.absent++;
+        break;
+      case DetailKey.miss:
+        detailValue.miss++;
+        break;
+      case DetailKey.late:
+        detailValue.late++;
+        break;
+      case DetailKey.early:
+        detailValue.early++;
+        break;
+      case DetailKey.lateAndEarly:
+        detailValue.lateAndEarly++;
+        break;
+    }
+  }
+
+  for (const attr in detailValue) {
+    if (
+      attr !== "normal" &&
+      detailValue[attr as keyof typeof detailValue] !== 0
+    ) {
+      detailState.type = "danger";
+      detailState.text = "异常";
+    }
+  }
+
+  reset(() => {
+    detailState.type = "success";
+    detailState.text = "正常";
+
+    for (const attr in detailValue) {
+      detailValue[attr as keyof typeof detailValue] = 0;
+    }
+  });
+});
+
 const handleChange = () => {
   date.value = new Date(`${year}.${month.value}`);
 };
 const handleToException = () => {
-  router.push("/exception");
+  router.push({
+    path: "/exception",
+    query: { month: month.value },
+  });
 };
 
 // 渲染日期

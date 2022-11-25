@@ -2,6 +2,7 @@ import { createStore, useStore as baseUseStore } from "vuex";
 import type { Store } from "vuex";
 import type { UsersState } from "./modules/users";
 import type { SignsState } from "./modules/signs";
+import type { ChecksState } from "./modules/checks";
 import type { InjectionKey } from "vue";
 import VuexPersistence from "vuex-persist";
 
@@ -14,6 +15,7 @@ export interface State {}
 export interface StateAll extends State {
   users: UsersState;
   signs: SignsState;
+  checks: ChecksState;
 }
 
 const vuexLocal = new VuexPersistence<State>({
