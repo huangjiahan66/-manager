@@ -47,7 +47,6 @@ const routes: Array<RouteRecordRaw> = [
         beforeEnter(to, from, next) {
           const usersInfos = (store.state as StateAll).users.infos;
           const signsInfos = (store.state as StateAll).signs.infos;
-          console.log("signsInfos", signsInfos);
           // 如果有signsInfos打卡信息  就不用重复发请求  isEmpty判断对象是否为空
           if (_.isEmpty(signsInfos)) {
             store
@@ -74,23 +73,36 @@ const routes: Array<RouteRecordRaw> = [
           auth: true,
         },
         // 进入页面之前
-        beforeEnter(to, from, next) {
+        async beforeEnter(to, from, next) {
           const usersInfos = (store.state as StateAll).users.infos;
           const signsInfos = (store.state as StateAll).signs.infos;
+          const checksApplyList = (store.state as StateAll).checks.applyList;
           console.log("signsInfos", signsInfos);
           // 如果有signsInfos打卡信息  就不用重复发请求  isEmpty判断对象是否为空
+          // 用户打卡信息详情
           if (_.isEmpty(signsInfos)) {
-            store
-              .dispatch("signs/getTime", { userid: usersInfos._id })
-              .then((res) => {
-                if (res.data.errcode === 0) {
-                  store.commit("signs/updateInfos", res.data.infos);
-                  next();
-                }
-              });
-          } else {
-            next();
+            const res = await store.dispatch("signs/getTime", {
+              userid: usersInfos._id,
+            });
+            if (res.data.errcode === 0) {
+              store.commit("signs/updateInfos", res.data.infos);
+              next();
+            } else {
+              return;
+            }
           }
+          // 获取用户审批信息
+          if (_.isEmpty(checksApplyList)) {
+            const res = await store.dispatch("checks/getApply", {
+              applicantid: usersInfos._id,
+            });
+            if (res.data.errcode === 0) {
+              store.commit("checks/updateApplyList", res.data.rets);
+            }
+          } else {
+            return;
+          }
+          next();
         },
       },
       {

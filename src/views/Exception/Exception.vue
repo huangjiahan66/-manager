@@ -16,7 +16,7 @@
 
   <el-row :gutter="20">
     <el-col :span="12">
-      <el-empty v-if="false" description="暂无异常考勤" />
+      <el-empty v-if="detailMonth.length === 0" description="暂无异常考勤" />
       <el-timeline v-else>
         <el-timeline-item
           v-for="item in detailMonth"
@@ -42,12 +42,23 @@
       </el-timeline>
     </el-col>
     <el-col :span="12"
-      ><el-empty v-if="false" description="暂无申请审批" />
+      ><el-empty
+        v-if="applyListMonth.length === 0"
+        description="暂无申请审批"
+      />
       <el-timeline v-else>
-        <el-timeline-item timestamp="2022.10.2" placement="top">
+        <el-timeline-item
+          v-for="item in applyListMonth"
+          :key="(item._id as string)"
+          :timestamp="(item.reason as string)"
+          placement="top"
+        >
           <el-card>
-            <p class="apply-info">考勤详情：暂无打卡记录</p>
-            <p class="apply-info">考勤详情：暂无打卡记录</p>
+            <p class="apply-info">
+              申请日期 {{ (item.time as string[])[0] }} -
+              {{ (item.time as string[])[1] }}
+            </p>
+            <p class="apply-info">申请详情 {{ item.note }}</p>
           </el-card>
         </el-timeline-item>
         <el-timeline-item timestamp="2022.10.2" placement="top">
@@ -74,6 +85,16 @@ const router = useRouter();
 const date = new Date();
 const year = date.getFullYear();
 const month = ref(Number(route.query.month) || date.getMonth() + 1);
+const applyListMonth = computed(() =>
+  store.state.checks.applyList.filter((v) => {
+    const startTime = (v.time as string[])[0].split(" ")[0].split("-");
+    const endTime = (v.time as string[])[1].split(" ")[0].split("-");
+    return (
+      startTime[1] <= toZero(month.value) && endTime[1] >= toZero(month.value)
+    );
+  })
+); //用户审批信息
+console.log("applyList", applyListMonth.value);
 
 const signsInfos = computed(() => store.state.signs.infos);
 const ret = (signsInfos.value.detail as { [index: string]: unknown })[

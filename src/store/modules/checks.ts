@@ -19,8 +19,13 @@ const mutations: MutationTree<ChecksState> = {
   },
 };
 const actions: ActionTree<ChecksState, State> = {
+  // 获取用户审批信息详情。
   getApply(context, payload) {
     return http.get("/checks/apply", payload);
+  },
+
+  postApply(context, payload) {
+    return http.post("/checks/apply", payload);
   },
 };
 const getters: GetterTree<ChecksState, State> = {};
