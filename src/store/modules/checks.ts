@@ -6,16 +6,22 @@ interface Infos {
   [index: string]: unknown;
 }
 export interface ChecksState {
+  [x: string]: any;
   applyList: Infos[];
+  checkList: Infos[];
 }
 
 const state: ChecksState = {
-  applyList: [],
+  applyList: [], //申请人
+  checkList: [], //审批人
 };
 
 const mutations: MutationTree<ChecksState> = {
   updateApplyList(state, payload) {
     state.applyList = payload;
+  },
+  updateCheckList(state, payload) {
+    state.checkList = payload;
   },
 };
 const actions: ActionTree<ChecksState, State> = {
@@ -26,6 +32,9 @@ const actions: ActionTree<ChecksState, State> = {
 
   postApply(context, payload) {
     return http.post("/checks/apply", payload);
+  },
+  putApply(context, payload) {
+    return http.put("/checks/apply", payload);
   },
 };
 const getters: GetterTree<ChecksState, State> = {};

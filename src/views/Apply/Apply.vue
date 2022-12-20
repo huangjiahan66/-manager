@@ -207,10 +207,14 @@ const submitForm = async (formEl: FormInstance | undefined) => {
             .dispatch("checks/getApply", { applicantid: userInfos.value._id })
             .then((res) => {
               if (res.data.errcode === 0) {
-                store.commit("check/updateApplyList", res.data.rets);
+                store.commit("checks/updateApplyList", res.data.rets);
               }
             });
-          ElMessage.success("添加成功");
+          store.dispatch("news/putRemind", {
+            userid: ruleForm.applicantid, //审批人id
+            approver: true,
+          });
+          ElMessage.success("添加审批成功");
           resetForm(ruleFormRef.value);
           handleClose();
         }

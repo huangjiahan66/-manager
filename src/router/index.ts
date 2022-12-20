@@ -10,7 +10,9 @@ const Sign = () => import("@/views/Sign/Sign.vue"); //打开签到页面
 const Exception = () => import("@/views/Exception/Exception.vue");
 const Apply = () => import("@/views/Apply/Apply.vue");
 const Check = () => import("@/views/Check/Check.vue");
-
+const NotFound = () => import("@/views/NotFound/NotFound.vue");
+const NotServer = () => import("@/views/NotServer/NotServer.vue");
+const NotAuth = () => import("@/views/NotAuth/NotAuth.vue");
 declare module "vue-router" {
   interface RouteMeta {
     menu?: boolean;
@@ -44,22 +46,31 @@ const routes: Array<RouteRecordRaw> = [
           auth: true,
         },
         // 进入页面之前
-        beforeEnter(to, from, next) {
+        async beforeEnter(to, from, next) {
           const usersInfos = (store.state as StateAll).users.infos;
           const signsInfos = (store.state as StateAll).signs.infos;
-          // 如果有signsInfos打卡信息  就不用重复发请求  isEmpty判断对象是否为空
+          const newsInfo = (store.state as StateAll).news.info;
           if (_.isEmpty(signsInfos)) {
-            store
-              .dispatch("signs/getTime", { userid: usersInfos._id })
-              .then((res) => {
-                if (res.data.errcode === 0) {
-                  store.commit("signs/updateInfos", res.data.infos);
-                  next();
-                }
-              });
-          } else {
-            next();
+            const res = await store.dispatch("signs/getTime", {
+              userid: usersInfos._id,
+            });
+            if (res.data.errcode === 0) {
+              store.commit("signs/updateInfos", res.data.infos);
+            } else {
+              return;
+            }
           }
+          if (_.isEmpty(newsInfo)) {
+            const res = await store.dispatch("news/getRemind", {
+              userid: usersInfos._id,
+            });
+            if (res.data.errcode === 0) {
+              store.commit("news/updateInfo", res.data.info);
+            } else {
+              return;
+            }
+          }
+          next();
         },
       },
       {
@@ -77,7 +88,7 @@ const routes: Array<RouteRecordRaw> = [
           const usersInfos = (store.state as StateAll).users.infos;
           const signsInfos = (store.state as StateAll).signs.infos;
           const checksApplyList = (store.state as StateAll).checks.applyList;
-          console.log("signsInfos", signsInfos);
+          console.log("usersInfos", usersInfos);
           // 如果有signsInfos打卡信息  就不用重复发请求  isEmpty判断对象是否为空
           // 用户打卡信息详情
           if (_.isEmpty(signsInfos)) {
@@ -115,21 +126,34 @@ const routes: Array<RouteRecordRaw> = [
           icon: "document-add",
           auth: true,
         },
-        beforeEnter(to, from, next) {
+        async beforeEnter(to, from, next) {
           const usersInfos = (store.state as StateAll).users.infos;
           const checksApplyList = (store.state as StateAll).checks.applyList;
+          const newsInfo = (store.state as StateAll).news.info;
+          console.log("newsInfo", newsInfo);
+
           if (_.isEmpty(checksApplyList)) {
-            store
-              .dispatch("checks/getApply", { applicantid: usersInfos._id })
-              .then((res) => {
-                if (res.data.errcode === 0) {
-                  store.commit("checks/updateApplyList", res.data.rets);
-                  next();
-                }
-              });
-          } else {
-            next();
+            const res = await store.dispatch("checks/getApply", {
+              applicantid: usersInfos._id,
+            });
+            if (res.data.errcode === 0) {
+              store.commit("checks/updateApplyList", res.data.rets);
+            } else {
+              return;
+            }
           }
+          if (newsInfo.applicant) {
+            const res = await store.dispatch("news/putRemind", {
+              userid: usersInfos.id,
+              applicant: false,
+            });
+            if (res.data.errcode === 0) {
+              store.commit("news/updateInfo", res.data.info);
+            } else {
+              return;
+            }
+          }
+          next();
         },
       },
       {
@@ -142,6 +166,33 @@ const routes: Array<RouteRecordRaw> = [
           icon: "finished",
           auth: true,
         },
+        async beforeEnter(to, from, next) {
+          const usersInfos = (store.state as StateAll).users.infos;
+          const checksCheckList = (store.state as StateAll).checks.checkList;
+          const newsInfo = (store.state as StateAll).news.info;
+          if (_.isEmpty(checksCheckList)) {
+            const res = await store.dispatch("checks/getApply", {
+              approverid: usersInfos._id,
+            });
+            if (res.data.errcode === 0) {
+              store.commit("checks/updateCheckList", res.data.rets);
+            } else {
+              return;
+            }
+          }
+          if (newsInfo.approver) {
+            const res = await store.dispatch("news/putRemind", {
+              userid: usersInfos._id,
+              approver: false,
+            });
+            if (res.data.errcode === 0) {
+              store.commit("news/updateInfo", res.data.info);
+            } else {
+              return;
+            }
+          }
+          next();
+        },
       },
     ],
   },
@@ -149,6 +200,25 @@ const routes: Array<RouteRecordRaw> = [
     path: "/login",
     name: "login",
     component: Login,
+  },
+  {
+    path: "/403",
+    name: "notAuth",
+    component: NotAuth,
+  },
+  {
+    path: "/404",
+    name: "notFound",
+    component: NotFound,
+  },
+  {
+    path: "/500",
+    name: "notServer",
+    component: NotServer,
+  },
+  {
+    path: "/:pathMatch(.*)*",
+    redirect: "/404",
   },
 ];
 
@@ -163,9 +233,14 @@ router.beforeEach((to, from, next) => {
   if (to.meta.auth && _.isEmpty(infos)) {
     if (token) {
       store.dispatch("users/infos").then((res) => {
+        console.log(res.data.infos.permission);
         if (res.data.errcode === 0) {
           store.commit("users/updateInfos", res.data.infos);
-          next();
+          if (res.data.infos.permission.includes(to.name)) {
+            next();
+          } else {
+            next("/403");
+          }
         }
       });
     } else {

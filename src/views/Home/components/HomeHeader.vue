@@ -5,14 +5,26 @@
       <i class="iconfont icon-icon-test"></i>
       <i class="iconfont icon-typescript"></i>
     </span>
-    <span class="home-header-title">jack在线考勤系统</span>
+    <span class="home-header-title">在线考勤系统</span>
     <el-dropdown>
-      <el-badge>
+      <el-badge :is-dot="isDot">
         <el-icon :size="20"><Bell /></el-icon>
       </el-badge>
       <template #dropdown>
         <el-dropdown-menu>
-          <el-dropdown-item>暂无消息</el-dropdown-item>
+          <el-dropdown-item
+            @click="handleNavigate('/apply')"
+            v-if="newsInfo.applicant"
+            >有审批结果消息</el-dropdown-item
+          >
+          <el-dropdown-item
+            @click="handleNavigate('/check')"
+            v-if="newsInfo.approver"
+            >有审批请求消息</el-dropdown-item
+          >
+          <el-dropdown-item v-if="!newsInfo.applicant && !newsInfo.approver"
+            >暂无消息</el-dropdown-item
+          >
         </el-dropdown-menu>
       </template>
     </el-dropdown>
@@ -33,16 +45,27 @@
 <script setup lang="ts">
 import { computed } from "vue";
 import { useStore } from "@/store";
-import { ElMessage } from "element-plus";
+import { useRouter } from "vue-router";
 const store = useStore();
-const head = computed(() => store.state.users.infos.head); //头像
-const name = computed(() => store.state.users.infos.name); //用户名
+const router = useRouter();
+const head = computed(() => store.state.users.infos.head);
+const name = computed(() => store.state.users.infos.name);
+
+const newsInfo = computed(() => store.state.news.info);
+console.log("header newsInfo", newsInfo.value);
+
+const isDot = computed(
+  () => (newsInfo.value.applicant || newsInfo.value.approver) as boolean
+);
+
 const handleLogout = () => {
   store.commit("users/clearToken");
   setTimeout(() => {
     window.location.replace("/login");
   }, 500);
-  ElMessage.success("退出成功");
+};
+const handleNavigate = (path: string) => {
+  router.push(path);
 };
 </script>
 
